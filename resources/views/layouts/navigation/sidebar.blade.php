@@ -36,6 +36,12 @@
                             </a>
                         </li>
 
+                        <li class="nav-item">
+                            <a class="nav-link menu-link" href="{{URL('/mis-overview')}}">
+                                <i class="ri-table-line"></i> <span data-key="t-advance-ui">MIS Reports</span>
+                            </a>
+                        </li>
+
                     
 
                     </ul>

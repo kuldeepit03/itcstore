@@ -23,3 +23,5 @@ Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard
 Route::get('/orders', [OrderController::class, 'index'])->name('orders');
 Route::get('/reset-filters', [OrderController::class, 'resetFilters'])->name('reset-filters');
 Route::get('/orderinfo/{id}', [ProductController::class, 'index'])->name('orderinfo');
+Route::get('/mis-overview', [OrderController::class, 'MISOverview'])->name('MIS-overview');
+Route::get('/download-csv', [OrderController::class, 'downloadCSV'])->name('downloadCsv');

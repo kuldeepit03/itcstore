@@ -342,7 +342,7 @@
                                                                 <span class="text-success">₹ {{$r_order->total_price}} </span>
                                                             </td>
                                                             <td>
-                                                            {{ \Carbon\Carbon::parse($r_order->b_created_at)->format('d-m-Y H:i:s') }}
+                                                            {{ \Carbon\Carbon::parse($r_order->datetime)->format('d-m-Y H:i:s') }}
                                                             </td>
                                                             <td>
                                                                 <span class="badge bg-success-subtle text-success fs-11 p-2">{{$r_order->order_status}}</span>
@@ -368,7 +368,7 @@
                                             <div class="align-items-center mt-2 row g-3 text-center text-sm-start">
                                                 <div class="col-sm">
                                                    
-                                                    <div class="text-muted">Showing recent <span class="fw-semibold">15</span> Orders
+                                                    <div class="text-muted">Showing recent <span class="fw-semibold">20</span> Orders
                                                     </div>
                                                 </div>
                                             </div>

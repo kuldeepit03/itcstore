@@ -130,7 +130,7 @@
                                                                 <span class="text-success">₹ {{$order->total_price}} </span>
                                                             </td>
                                                             <td>
-                                                            {{ \Carbon\Carbon::parse($order->b_created_at)->format('d-m-Y H:i:s') }}
+                                                            {{ \Carbon\Carbon::parse($order->datetime)->format('d-m-Y H:i:s') }}
                                                             </td>
                                                             <td>
                                                                 <span class="badge bg-success-subtle text-success fs-11 p-2">{{$order->order_status}}</span>

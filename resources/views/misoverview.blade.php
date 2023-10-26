@@ -165,9 +165,42 @@
                                                 <tbody>
                                                     
                                                     @foreach($result as $res)
+													@php
+                                                    switch ($res->std_code) {
+                                                        case "std:011":
+                                                            $city = 'New Delhi';
+                                                            break;
+                                                        case "std:0124":
+                                                            $city = 'Gurugram';
+                                                            break;
+                                                        case "std:080":
+                                                            $city = 'Bengalore';
+                                                            break;
+                                                        case "std:0120":
+                                                            $city = 'Ghaziabad';
+                                                            break;
+                                                        case "std:022":
+                                                            $city = 'Mumbai';
+                                                            break;
+                                                        case "std:0129":
+                                                            $city = 'Faridabad';
+                                                            break;
+                                                        case "std:033":
+                                                            $city = 'Kolkata';
+                                                            break;
+                                                        case "std:040":
+                                                            $city = 'Hyderabad';
+                                                            break;
+                                                        default:
+                                                            $city ='';
+                                                    }
+
+ 
+
+                                                    @endphp
                                                     <tr>
                                                         <td class="align-middle text-center">{{ $res->date }}</td>
-                                                        <td class="align-middle text-center">{{ $res->std_code }}</td>
+                                                        <td class="align-middle text-center">{{ $city }}</td>
                                                         <td class="align-middle text-center">{{ $res->phonepe_orders }}</td>
                                                         <td class="align-middle text-center">{{ $res->phonepe_price }}</td>
                                                         <td class="align-middle text-center">

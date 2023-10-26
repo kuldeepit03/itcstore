@@ -16,15 +16,15 @@ class DashboardController extends Controller
         $query2 = Orders::query();
 
         if ($request->filled('audit_from')) {
-            $query->whereDate('b_created_at', '>=', Carbon::parse($request->audit_from)->format('Y-m-d'));
-            $query1->whereDate('b_created_at', '>=', Carbon::parse($request->audit_from)->format('Y-m-d'));
-            $query2->whereDate('b_created_at', '>=', Carbon::parse($request->audit_from)->format('Y-m-d'));
+            $query->whereDate('datetime', '>=', Carbon::parse($request->audit_from)->format('Y-m-d'));
+            $query1->whereDate('datetime', '>=', Carbon::parse($request->audit_from)->format('Y-m-d'));
+            $query2->whereDate('datetime', '>=', Carbon::parse($request->audit_from)->format('Y-m-d'));
         }
 
         if ($request->filled('audit_to')) {
-            $query->whereDate('b_created_at', '<=', Carbon::parse($request->audit_to)->format('Y-m-d'));
-            $query1->whereDate('b_created_at', '<=', Carbon::parse($request->audit_to)->format('Y-m-d'));
-            $query2->whereDate('b_created_at', '<=', Carbon::parse($request->audit_to)->format('Y-m-d'));
+            $query->whereDate('datetime', '<=', Carbon::parse($request->audit_to)->format('Y-m-d'));
+            $query1->whereDate('datetime', '<=', Carbon::parse($request->audit_to)->format('Y-m-d'));
+            $query2->whereDate('datetime', '<=', Carbon::parse($request->audit_to)->format('Y-m-d'));
         }
 
         if ($request->filled('buyer')) {
@@ -47,7 +47,7 @@ class DashboardController extends Controller
                                     ->sum(DB::raw('total_price - shipping_charges')),
         ];
         
-        $data['recent_orders'] = Orders::orderBy('id', 'desc')->take(15)->get();
+        $data['recent_orders'] = Orders::orderBy('id', 'desc')->take(20)->get();
 
         $data['total_sale'] = Products::select(DB::raw('SUM(qty) as total_sku_sale'))->get() ;
 
@@ -57,7 +57,7 @@ class DashboardController extends Controller
         $data['buyer_app']= Orders::select('bap_id')->distinct()->get();
 
 
-        $result_monthly = Orders::selectRaw("MONTH(c_created_at) as month,
+        $result_monthly = Orders::selectRaw("MONTH(datetime) as month,
                     SUM(IF(bap_id like '%shopping-network.phonepe.com%', 1, 0)) AS phonepe_orders,
                     SUM(IF(bap_id like '%shopping-network.phonepe.com%', total_price, 0)) AS phonepe_price,
                     SUM(IF(bap_id like '%shopping-network.phonepe.com%' AND order_status='Cancelled', 1, 0)) AS phonepe_cancelled_orders,
@@ -74,8 +74,8 @@ class DashboardController extends Controller
                     SUM(IF(bap_id like '%nobrokerhood%', total_price, 0)) AS nobrokerhood_price,
                     SUM(IF(bap_id like '%nobrokerhood%' AND order_status='Cancelled', 1, 0)) AS nobrokerhood_cancelled_orders,
                     SUM(IF(bap_id like '%nobrokerhood%' AND order_status='Cancelled', total_price, 0)) AS nobrokerhood_cancelled_amt")
-                    ->whereBetween('c_created_at', ['2023-04-01', '2023-09-30'])
-                    ->groupByRaw("MONTH(c_created_at)")
+                    ->whereBetween('datetime', ['2023-04-01', '2023-09-30'])
+                    ->groupByRaw("MONTH(datetime)")
                     ->get();
                 $chart_data[]=['Month','PhonePay','PayTM','MagicPin','NoBrokerHood'];
                 foreach($result_monthly as $key => $value)

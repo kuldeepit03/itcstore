@@ -25,7 +25,3 @@ Route::get('/reset-filters', [OrderController::class, 'resetFilters'])->name('re
 Route::get('/orderinfo/{id}', [ProductController::class, 'index'])->name('orderinfo');
 Route::get('/mis-overview', [OrderController::class, 'MISOverview'])->name('MIS-overview');
 Route::get('/download-csv', [OrderController::class, 'downloadCSV'])->name('downloadCsv');
-Route::post('send-otp',[LoginRegisterController::class,'SendOTP'])->name('send-otp');
-Route::post('check-otp',[LoginRegisterController::class,'CheckOTP'])->name('check-otp');
-Route::post('get-sbd-data', [OrderController::class, 'getSbdData'])->name('get-sbd-data');
-Route::get('/sbd-mis-overview', [OrderController::class, 'SBDMISOverview'])->name('sbd-mis-overview');

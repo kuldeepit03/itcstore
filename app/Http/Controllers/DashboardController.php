@@ -86,7 +86,9 @@ class DashboardController extends Controller
                 $chart_data[]=['Month','PhonePay','PayTM','MagicPin','NoBrokerHood'];
                 foreach($result_monthly as $key => $value)
                 {
-                    $chart_data[++$key] = [$value->month,(int)$value->phonepe_orders, (int)$value->paytm_orders, (int)$value->magicpin_orders, (int)$value->nobrokerhood_orders];
+                    $month_num =$value->month; 
+                    $month_name = date("F", mktime(0, 0, 0, $month_num, 10)); 
+                    $chart_data[++$key] = [$month_name,(int)$value->phonepe_orders, (int)$value->paytm_orders, (int)$value->magicpin_orders, (int)$value->nobrokerhood_orders];
                 }
             //return view('dashboard')->with('monthly',$chart_data);
             return view('dashboard',$data)->with('monthly',$chart_data);

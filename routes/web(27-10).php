@@ -29,6 +29,3 @@ Route::post('send-otp',[LoginRegisterController::class,'SendOTP'])->name('send-o
 Route::post('check-otp',[LoginRegisterController::class,'CheckOTP'])->name('check-otp');
 Route::post('get-sbd-data', [OrderController::class, 'getSbdData'])->name('get-sbd-data');
 Route::get('/sbd-mis-overview', [OrderController::class, 'SBDMISOverview'])->name('sbd-mis-overview');
-Route::post('get-mis-data', [OrderController::class, 'getMisData'])->name('get-mis-data');
-Route::post('get-city-data',[OrderController::class, 'getCityData'])->name('get-city-data');
-Route::post('get-sbd-city-data',[OrderController::class, 'getSbdCityData'])->name('get-sbd-city-data');

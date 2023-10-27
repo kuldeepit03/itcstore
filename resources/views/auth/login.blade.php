@@ -20,6 +20,7 @@
     <link href="{{ asset ('/resources/assets/css/app.min.css') }}" rel="stylesheet" type="text/css" />
     <!-- custom Css-->
     <link href="{{ asset ('/resources/assets/css/custom.min.css') }}" rel="stylesheet" type="text/css" />
+    <meta name="csrf-token" content="{{ csrf_token() }}" />
 
 </head>
 
@@ -64,11 +65,20 @@
                                     <p class="text-muted">Sign in to your ITC Store retailer account.</p>
                                 </div>
                                 <div class="p-2 mt-4">
-                                    <form action="dashboard">
+                                    <form>
 
                                         <div class="mb-3">
-                                            <label for="provider_id" class="form-label">Provider Id</label>
-                                            <input type="text" class="form-control" id="provider_id" placeholder="Please enter your provider id">
+                                            <label for="email_id" class="form-label">Email ID</label>
+                                            <input type="text" class="form-control" id="email" placeholder="Please enter your Email ID" required="">
+                                            <!-- <input type="text" id="email" required> <i>Email</i>  -->
+                                        </div>
+
+                                        <div class="mb-3">
+                                             <label for="email_id" class="form-label">OTP</label>
+                                             <input type="text" class="form-control" id="otp" placeholder="Please enter OTP" required="">
+                                            <!-- <input type="text" id="otp" required><i>OTP</i> -->
+                                            <span class="error-span" id="xemail" style="display:none;">This email does not exist in our records</span>
+                                            <span class="error-span" id="xotp" style="display:none;">You have entered wrong OTP</span>
                                         </div>
 
                                       
@@ -79,7 +89,8 @@
                                         </div>
 
                                         <div class="mt-4">
-                                            <button class="btn btn-success w-100" type="submit">Sign In</button>
+                                            <!-- <input type="submit" value="Login" onclick="check_otp()">  -->
+                                            <button class="btn btn-success w-100" type="submit" onclick="check_otp(event)"">Sign In</button>
                                         </div>
 
                                       
@@ -131,6 +142,69 @@
     <script src="{{ asset ('/resources/assets/js/pages/particles.app.js') }}"></script>
     <!-- password-addon init -->
     <script src="{{ asset ('/resources/assets/js/pages/password-addon.init.js') }}"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <meta name="csrf-token" content="{{ csrf_token() }}" />
 </body>
 
 </html>
+
+<script type="text/javascript">
+
+    function generateRandomNumber() {
+        var minm = 100000;
+        var maxm = 999999;
+        return Math.floor(Math
+        .random() * (maxm - minm + 1)) + minm;
+    }
+
+    $(document).ready(function(){
+      $("#email").focusout(function(){
+        $('.error-span').hide();
+        var email=$(this).val();
+        let otp = generateRandomNumber();
+        console.log("OTP:::", otp);
+
+        $.ajax({
+                         type: 'POST',
+                         url: "{{ url('send-otp') }}",
+                         headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
+                         data: {'otp':otp ,'email':email },
+                         success: function (data) {
+                                 if(data!="true"){
+                                    $('#xemail').show();
+                                 }        
+                         }             
+                });
+      });
+    });
+
+
+
+    function check_otp(e){
+        e.preventDefault();
+        var email=$('#email').val();
+        var otp=$('#otp').val();
+        $('.error-span').hide();
+        $.ajax({
+                         type: 'POST',
+                         url: "{{ url('check-otp') }}",
+                         headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
+                         data: {'otp':otp ,'email':email },
+                         success: function (data) {
+                            console.log("OTP matched:::",data); 
+                            if(data=="true"){  
+                                // return "login successful";
+                                var url = "{{ route('dashboard') }}";
+                                location.href = url; 
+                            }else{
+                                $('#xotp').show();
+                            }
+                                   
+                         }             
+                });
+
+
+    }
+
+
+</script>

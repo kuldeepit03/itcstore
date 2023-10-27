@@ -12,79 +12,85 @@ class APIController extends Controller
 		
 		$end = date('Y-m-d');
 		$start = date('Y-m-d', strtotime('-1 months', strtotime($end)));
-		$orders = Orders::join('order_details', 'order_details.order_no', '=', 'orders_data.order_no')
-			->whereDate('orders_data.datetime', '>=', $start)
-			->whereDate('orders_data.datetime', '<=', $end)
-			->orderBy('orders_data.datetime', 'DESC')
-			->get();
+		//$start = '2023-10-22';
+		
+		$orders = DB::table('orders_data')
+		->select('orders_data.id as id', 'order_details.order_no as order_no', 'orders_data.transaction_id as transaction_id', 'orders_data.bap_id as bap_id', 'order_details.sku_name as sku_name', 'order_details.sku_code as sku_code', 'orders_data.shipping_city as shipping_city', 'orders_data.total_price as total_price', 'orders_data.payment_status as payment_status', 'orders_data.payment_mode as payment_mode', 'orders_data.billing_name as billing_name', 'orders_data.order_status as orders_status', 'orders_data.buyer_finder_fee as buyer_finder_fee', 'orders_data.buyer_app_finder_fee_type as buyer_finder_fee_type', 'orders_data.withholding_amount as withholding_amount', 'orders_data.settlement_window as settlement_window', 'orders_data.payment_transaction_id as payment_transaction_id', 'orders_data.updated_datetime as updated_datetime', 'orders_data.datetime as datetime', 'orders_data.lm_delivery_date as lm_delivery_date', 'orders_data.shipped_date as shipped_date', 'orders_data.cancelled_date as cancelled_date', 'orders_data.cancelled_by as cancelled_by', 'orders_data.cancelled_reason as cancelled_reason', 'orders_data.cancellation_remark as cancellation_remark', 'orders_data.shipping_postal_code as shipping_postal_code', 'orders_data.warehouse_pincode as warehouse_pincode', 'orders_data.shipping_charges as shipping_charges', 'orders_data.b_phone as b_phone')
+		->join('order_details', 'order_details.order_no', '=', 'orders_data.order_no')
+		->whereDate('orders_data.datetime', '>=', $start)
+		->whereDate('orders_data.datetime', '<=', $end)
+		->orderBy('orders_data.datetime', 'DESC')
+		->get();
 
+		$i = 0;
 		$processedData = [];
-		$i=0;
+
 		foreach ($orders as $order) {
 			$i++;
-			$lmDeliveryDate = $order->lm_delivery_date ? date("d-m-Y H:i:s", strtotime($order->lm_delivery_date)) : "";
-			$shippedDate = $order->shipped_date ? date("d-m-Y H:i:s", strtotime($order->shipped_date)) : "";
-			$cancelledDate = $order->cancelled_date ? date("d-m-Y H:i:s", strtotime('+5 hour +30 minutes', strtotime($order->cancelled_date))) : "";
 
-			$orderStatus = $order->orders_status;
-			if ($orderStatus === null) {
-				$orderStatus = "";
+			$delivery_date = $order->lm_delivery_date ? date("d-m-Y H:i:s", strtotime($order->lm_delivery_date)) : "";
+			$shipped_date = $order->shipped_date ? date("d-m-Y H:i:s", strtotime($order->shipped_date)) : "";
+			$cancelled_date = $order->cancelled_date ? date("d-m-Y H:i:s", strtotime('+5 hour +30 minutes', strtotime($order->cancelled_date))) : "";
+
+			$order_status = $order->orders_status;
+			if ($order_status === null) {
+				$order_status = "";
 			} else {
-				if (!in_array(strtolower($orderStatus), ['delivered', 'created', 'accepted', 'shipped & returned', 'cancelled'], true)) {
-					$orderStatus = "In-Progress";
-				} elseif (in_array(strtolower($orderStatus), ['delivered', 'created', 'accepted', 'shipped & returned'], true)) {
-					$orderStatus = "Completed";
-				} elseif ($orderStatus === 'cancelled') {
-					$orderStatus = "Cancelled";
+				if (!in_array(strtolower($order_status), ['delivered', 'created', 'accepted', 'shipped & returned', 'cancelled'], true)) {
+					$order_status = "In-Progress";
+				} elseif (in_array(strtolower($order_status), ['delivered', 'created', 'accepted', 'shipped & returned'], true)) {
+					$order_status = "Completed";
+				} elseif (strtolower($order_status) === 'cancelled') {
+					$order_status = "Cancelled";
 				}
 			}
 
-			$cancelledReason = "";
+			$cancelled_reason = "";
 			switch ($order->cancelled_reason) {
 				case "001":
-					$cancelledReason = "Price of one or more items have changed due to which the buyer was asked to make an additional payment";
+					$cancelled_reason = "Price of one or more items have changed due to which the buyer was asked to make an additional payment";
 					break;
 				case "002":
-					$cancelledReason = "One or more items in the order not available";
+					$cancelled_reason = "One or more items in the order not available";
 					break;
 				case "003":
-					$cancelledReason = "Product available at lower than the order price";
+					$cancelled_reason = "Product available at lower than the order price";
 					break;
 				case "004":
-					$cancelledReason = "Order in pending shipment / delivery state for too long";
+					$cancelled_reason = "Order in pending shipment / delivery state for too long";
 					break;
 				case "005":
-					$cancelledReason = "Merchant rejected the order";
+					$cancelled_reason = "Merchant rejected the order";
 					break;
 				case "006":
-					$cancelledReason = "Order not shipped as per buyer app SLA";
+					$cancelled_reason = "Order not shipped as per buyer app SLA";
 					break;
 				case "010":
-					$cancelledReason = "Buyer wants to modify details";
+					$cancelled_reason = "Buyer wants to modify details";
 					break;
 				case "011":
-					$cancelledReason = "Buyer not found or cannot be contacted";
+					$cancelled_reason = "Buyer not found or cannot be contacted";
 					break;
 				case "012":
-					$cancelledReason = "Buyer does not want the product anymore";
+					$cancelled_reason = "Buyer does not want the product anymore";
 					break;
 				case "013":
-					$cancelledReason = "Buyer refused to accept delivery";
+					$cancelled_reason = "Buyer refused to accept delivery";
 					break;
 				case "014":
-					$cancelledReason = "Address not found";
+					$cancelled_reason = "Address not found";
 					break;
 				case "015":
-					$cancelledReason = "Buyer not available at the location";
+					$cancelled_reason = "Buyer not available at the location";
 					break;
 				case "016":
-					$cancelledReason = "Accident / rain / strike / vehicle issues";
+					$cancelled_reason = "Accident / rain / strike / vehicle issues";
 					break;
 				case "017":
-					$cancelledReason = "Order delivery delayed or not possible";
+					$cancelled_reason = "Order delivery delayed or not possible";
 					break;
 				case "018":
-					$cancelledReason = "Delivery pin code not serviceable";
+					$cancelled_reason = "Delivery pin code not serviceable";
 					break;
 			}
 
@@ -128,31 +134,31 @@ class APIController extends Controller
 				"Network Transaction Id" => $order->transaction_id,
 				"Seller NP Order Id" => $order->id,
 				"Seller NP Type" => "Inventory seller node",
-				"Order Status" => $orderStatus,
+				"Order Status" => $order_status,
 				"Name of seller" => "ITCStore",
 				"Seller Pincode" => $order->warehouse_pincode,
 				"SKU Name" => $order->sku_name,
 				"SKU Code" => $order->sku_code,
 				"Order category" => $catType,
-				"Ready To Ship At Date & Time" => $shippedDate,
-				"Shipped At Date & Time" => $shippedDate,
-				"Delivered At Date & Time" => $lmDeliveryDate,
+				"Ready To Ship At Date & Time" => $shipped_date,
+				"Shipped At Date & Time" => $shipped_date,
+				"Delivered At Date & Time" => $delivery_date,
 				"Delivery Type" => "Off Network",
-				"Logistics Network Order Id(For on-network delivery)" => "",
-				"Logistics Network Transaction Id(For on-network delivery)" => "",
+				"Logistics Network Order Id (For on-network delivery)" => "",
+				"Logistics Network Transaction Id (For on-network delivery)" => "",
 				"Delivery city" => $order->shipping_city,
 				"Delivery Pincode" => $order->shipping_postal_code,
-				"Cancelled Date & Time" => $cancelledDate,
+				"Cancelled Date & Time" => $cancelled_date,
 				"Cancelled By" => $order->cancelled_by,
-				"Cancellation Reason" => $cancelledReason,
+				"Cancellation Reason" => $cancelled_reason,
 				"Cancellation Remark" => $order->cancellation_remark,
 				"Shipping Charges" => $order->shipping_charges,
-				"Total Order Value(Inc Shipping Charges)" => $order->total_price,
+				"Total Order Value (Inc Shipping Charges)" => $order->total_price,
 			];
 
 			$processedData[] = $response;
 		}
 
-		print_r(json_encode($processedData));
+		echo json_encode($processedData);
 	}
 }

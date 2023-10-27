@@ -33,18 +33,24 @@ class DashboardController extends Controller
 
         $data = [
             'total_no' => $query->count(),
-            'total_amt' => $query->sum(DB::raw('total_price - shipping_charges')),
+            //'total_amt' => $query->sum(DB::raw('total_price - shipping_charges')),
+            'total_amt' => $query->sum(DB::raw('total_price')),
             'delivered' => $query->whereIn('order_status', ['Delivered', 'delivered'])->count(),
-            'deliv_amt' => $query->whereIn('order_status', ['Delivered', 'delivered'])->sum(DB::raw('total_price - shipping_charges')),
+            //'deliv_amt' => $query->whereIn('order_status', ['Delivered', 'delivered'])->sum(DB::raw('total_price - shipping_charges')),
+            'deliv_amt' => $query->whereIn('order_status', ['Delivered', 'delivered'])->sum(DB::raw('total_price')),
             'cancelled' => $query1->whereIn('order_status', ['Cancelled', 'cancelled'])->count(),
-            'cancel_amt' => $query1->whereIn('order_status', ['Cancelled', 'cancelled'])->sum(DB::raw('total_price - shipping_charges')),
+            //'cancel_amt' => $query1->whereIn('order_status', ['Cancelled', 'cancelled'])->sum(DB::raw('total_price - shipping_charges')),
+            'cancel_amt' => $query1->whereIn('order_status', ['Cancelled', 'cancelled'])->sum(DB::raw('total_price')),
             'pending' => $query2->where(function ($query2) {
                          $query2->whereNull('order_status')
                                 ->orWhereNotIn('order_status', ['Delivered', 'delivered', 'Cancelled', 'cancelled']);
                               })->count(),
+            //'pending_amt' => $query2->whereNotIn('order_status', ['Delivered', 'delivered', 'Cancelled', 'cancelled'])
+            //                        ->orWhereNull('order_status')
+             //                       ->sum(DB::raw('total_price - shipping_charges')),
             'pending_amt' => $query2->whereNotIn('order_status', ['Delivered', 'delivered', 'Cancelled', 'cancelled'])
                                     ->orWhereNull('order_status')
-                                    ->sum(DB::raw('total_price - shipping_charges')),
+                                    ->sum(DB::raw('total_price')),
         ];
         
         $data['recent_orders'] = Orders::orderBy('id', 'desc')->take(20)->get();

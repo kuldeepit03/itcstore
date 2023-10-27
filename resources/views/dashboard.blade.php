@@ -276,7 +276,8 @@
                                                     <div class="d-flex mb-2">
                                                         <div class="flex-grow-1">
                                                             <p class="text-truncate text-muted fs-14 mb-0"><i class="mdi mdi-circle align-middle text-primary me-2"></i>
-                                                            {!! nl2br(e(str_limit(wordwrap($sku->sku_name, 40, "\n", true), 100))) !!}
+                                                            <!--{!! nl2br(e(str_limit(wordwrap($sku->sku_name, 35, "\n", true), 100))) !!}-->
+                                                            {{ \Illuminate\Support\Str::limit($sku->sku_name, 35) }}
                                                            </p>
                                                         </div>
                                                         <div class="flex-shrink-0">

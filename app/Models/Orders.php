@@ -9,5 +9,6 @@ class Orders extends Model
 {
     use HasFactory;
     protected $table = 'orders_data';
+    public $timestamps = false;
 
 }

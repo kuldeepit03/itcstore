@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Orders;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Config;
 use DB;
 
 class APIController extends Controller
@@ -161,4 +163,273 @@ class APIController extends Controller
 
 		echo json_encode($processedData);
 	}
+	
+	public function sendOrderDataZypp()
+    {
+		$apiConfig = Config::get('api');
+	
+        date_default_timezone_set("Asia/Kolkata");
+        //$order_id = request()->input("order_id");
+		$order_id = 'OD2310250816499055197412';
+        $items = [];
+        $ordersData = DB::table('orders_data')->where('order_no', $order_id)->get();
+
+        foreach ($ordersData as $fetchData) {
+            $order_date = $fetchData->datetime;
+            $final_amount = $fetchData->total_price;
+            $slotStart = $fetchData->datetime;
+            $time = strtotime($fetchData->end_timestamp);
+            $slotEnd = date("Y-m-d H:i:s", $time);
+            $pickup_start_timestamp = strtotime($fetchData->picked_datetime);
+            $orderPickupTime = date("Y-m-d H:i:s", $pickup_start_timestamp);
+            $idx = strpos($fetchData->s_latlog, ",");
+            $cust_latitude = substr($fetchData->s_latlog, 0, $idx);
+            $cust_longitude = substr($fetchData->s_latlog, $idx + 1);
+            $cust_name = $fetchData->shipping_name;
+            $cust_phoneNumber = $fetchData->s_phone;
+            $cust_streetNumber = $fetchData->s_door;
+            $cust_streetName = $fetchData->s_door;
+            $cust_addressLine2 = $fetchData->s_locality;
+            $cust_cityName = $fetchData->shipping_city;
+            $cust_postalCode = $fetchData->shipping_postal_code;
+            $shipping_add = $fetchData->shipping_address;
+
+            $fetchLineItems = DB::table('order_details')->where('order_no', $order_id)->get();
+            foreach ($fetchLineItems as $fetchItemDetails) {
+                $sku_code = $fetchItemDetails->sku_code;
+                $sku_name = $fetchItemDetails->sku_name;
+                $quantity = $fetchItemDetails->qty;
+                $price = $fetchItemDetails->price;
+                $weightQuery = DB::table('itc_product_master_v2')->where('sku_code', $sku_code)->first();
+                $prod_weight = $weightQuery->variant_gram;
+                $item_data = [
+                    'menuCode' => $sku_code,
+                    'menuDescription' => $sku_name,
+                    'quantity' => (int)$quantity,
+                    'size' => $prod_weight,
+                    'unitPrice' => (int)$price,
+                ];
+                $items[] = $item_data;
+            }
+        }
+
+        $data = [
+            'order' => [
+                'orderNumber' => $order_id,
+                'orderDate' => $order_date,
+                'finalAmount' => (float)$final_amount,
+                'slotStart' => $slotStart,
+                'slotEnd' => $slotEnd,
+                'orderPickupTime' => $orderPickupTime,
+                'instruction' => 'NA',
+                'piecesDetails' => $items,
+            ],
+            'customer' => [
+                'latitude' => (float)$cust_latitude,
+                'longitude' => (float)$cust_longitude,
+                'name' => 'ITC Store',
+                'phoneNumber' => $cust_phoneNumber,
+                'streetNumber' => $cust_streetNumber,
+                'streetName' => $cust_streetName,
+                'cityName' => $cust_cityName,
+                'addressLine2' => 'cust addressLine2',
+                'addressLine3' => '',
+                'addressLine4' => '',
+                'postalCode' => $cust_postalCode,
+            ],
+            'originDetails' => [
+                'latitude' => '28.4190306',
+                'longitude' => '77.037344',
+                'name' => 'Gurgaon Store',
+                'phoneNumber' => '',
+                'streetNumber' => 'H no 242 ',
+                'streetName' => 'Q1 Block',
+                'cityName' => 'Gurgaon',
+                'addressLine2' => 'H no 242 basement',
+                'addressLine3' => 'Q1 Block, Pocket H, Nirvana Country, Sector 49',
+                'addressLine4' => 'Nirvana Country, Sector 49 - South city 2 Gurugram, Haryana',
+                'postalCode' => '122018',
+            ],
+            'payment' => [
+                [
+                    'paid' => true,
+                    'platform' => 'PrePaid',
+                    'collectableAmount' => (int)$final_amount,
+                ],
+            ],
+        ];
+
+        $postdata = json_encode($data);
+        $response = Http::withHeaders([
+            'Content-Type' 		=> 'application/json',
+        ])->withBasicAuth($apiConfig['username_zypp_test'], $apiConfig['password_zypp_test'])
+		->post($apiConfig['base_url_zypp_test']. '/api/secure/v1/merchant/add/order', json_decode($postdata, true));
+        return $response;
+    }
+
+	
+
+	public function updateStatusZypp (Request $request)
+    {
+        $headers = $request->header('key');
+        if ($headers != "hH&^%FDtrwrew$$^^*^PBCFAFA") {
+            return response()->json(['responseCode' => 401, 'responseMessage' => 'Unauthorized'], 401);
+        }
+
+		date_default_timezone_set('Asia/Calcutta');
+		$datetime = date("Y-m-d H:i:s");
+		date_default_timezone_set("UTC");
+		$date = date("Y-m-d H:i:s");
+		$timestamp1 = microtime(true); 
+
+		$timestamp = date('Y-m-d\TH:i:s.').((int)(($timestamp1 - (int)$timestamp1) * 1000)).'Z';
+        $requestData = $request->json()->all();
+        $orderNumber = $requestData['orderNumber'];
+        $status = $requestData['status'];
+		$rider_name = $requestData['worker']['name'];
+		$rider_contact = $requestData['worker']['contact'];
+		$rider_lat = $requestData['worker']['lat'];
+		$rider_lng = $requestData['worker']['lng'];
+		$eta = $requestData['eta'];
+        $order = Orders::where('order_no', $orderNumber)->first();
+		$order_id =  $order->id;
+		$client_order_id = 'ONDC000'.$order_id;
+        if (!$order) {
+            return response()->json(['responseCode' => 0, 'responseMessage' => 'Error! Invalid orderNumber.'], 400);
+        }
+
+
+        if ($status == "Picked" || $status == "order_picked_up") {
+			$order->where('id', $order_id)->update([
+				'order_status' => "Picked",
+				'picked_datetime' => $timestamp,
+				'updated_datetime' => $timestamp,
+				'int_updated_datetime' => $datetime,
+			]);
+		} elseif ($status == "Packed" || $status == "pickup_started" || $status == "pickup_hub_reached") {
+			$order->where('id', $order_id)->update([
+				'order_status' => "Packed",
+				'updated_datetime' => $timestamp,
+				'int_updated_datetime' => $datetime,
+			]);
+		} elseif ($status === "DISPATCHED") {
+			$order->where('id', $order_id)->update([
+				'order_status' => "DISPATCHED",
+				'out_for_delivery_datetime' => $timestamp,
+				'updated_datetime' => $timestamp,
+				'int_updated_datetime' => $datetime,
+			]);
+		} elseif ($status === "Delivered" || $status === "delivered" || $status === "order_delivered") {
+			$order->where('id', $order_id)->update([
+				'order_status' => "Delivered",
+				'delivery_date' => $timestamp,
+				'updated_datetime' => $timestamp,
+				'int_updated_datetime' => $datetime,
+			]);
+		} elseif ($status === "order_cancelled") {
+			$order->where('id', $order_id)->update([
+				'order_status' => "Cancelled",
+				'cancelled_date' => $timestamp,
+				'cancelled_by' => 'Buyer',
+				'cancelled_reason' => '012',
+				'updated_datetime' => $timestamp,
+				'int_updated_datetime' => $datetime,
+			]);
+		} else {
+			$order->where('id', $order_id)->update([
+				'order_status' => $status,
+				'updated_datetime' => $timestamp,
+				'int_updated_datetime' => $datetime,
+			]);
+		}
+		DB::table('lm_data')->insert([
+			'time' 				=> $datetime,
+			'query_time' 		=> $datetime,
+			'rider_name' 		=> $rider_name,
+			'sfx_order_id' 		=> $orderNumber,
+			'order_id' 			=> $client_order_id ,
+			'client_order_id' 	=> $client_order_id ,
+			'order_status' 		=> $status,
+			'rider_contact' 	=> $rider_contact,
+			'rider_latitude' 	=> $rider_lat,
+			'rider_longitude' 	=> $rider_lng,
+			'drop_eta' 			=> $eta,
+		]);
+		return response()->json(['responseCode' => 200, 'responseMessage' => 'Data saved & Status updated successfully'], 200);
+    }
+
+
+
+	public function createOrderBorzo()
+    {
+		$bzr_conf = Config::get('api');
+		date_default_timezone_set("Asia/Kolkata");
+        //$order_id = request()->input("order_id");
+		$order_id = 'F3406DFA6FF6D943F21E4EDDD18409C9';
+		//$order_id = 'F3406DFA6FF6D943F21E4EDDD18409C9';
+        $ordersData = DB::table('orders_data')->where('order_no', $order_id)->get();
+
+        foreach ($ordersData as $fetchData) {
+            $order_date = $fetchData->datetime;
+            $final_amount = $fetchData->total_price;			
+            $idx = strpos($fetchData->s_latlog, ",");
+            $cust_latitude = substr($fetchData->s_latlog, 0, $idx);
+            $cust_longitude = substr($fetchData->s_latlog, $idx + 1);
+            $cust_name = $fetchData->shipping_name;
+            $cust_phoneNumber = $fetchData->s_phone;
+            $cust_streetNumber = $fetchData->s_door;
+            $cust_streetName = $fetchData->s_door;
+            $cust_addressLine2 = $fetchData->s_locality;
+            $cust_cityName = $fetchData->shipping_city;
+			$cust_state = $fetchData->shipping_state;
+            $cust_postalCode = $fetchData->shipping_postal_code;
+            $shipping_add = $fetchData->shipping_address;
+
+            $fetchLineItems = DB::table('order_details')->where('order_no', $order_id)->get();
+			$prod_weight = 0;
+            foreach ($fetchLineItems as $fetchItemDetails) {
+                $sku_code = $fetchItemDetails->sku_code;
+                $sku_name = $fetchItemDetails->sku_name;
+                $quantity = $fetchItemDetails->qty;
+                $price = $fetchItemDetails->price;
+
+                $weightQuery = DB::table('itc_product_master_v2')->where('sku_code', $sku_code)->first();
+                $prod_weight = $weightQuery->variant_gram + $prod_weight;
+				$prod_weight_kg =  $prod_weight/1000;
+            }
+        }
+		$address = $shipping_add.','.$cust_cityName.','.$cust_state.','.$cust_postalCode;
+		//$address = $cust_addressLine2.','.$cust_cityName.','.$cust_state;
+		$data = [ 
+			'matter' => 'Documents', 
+			'total_weight_kg'=> $prod_weight_kg,
+			'points' => [ 
+				[ 
+					'address' => 'H no 242 basement, Q1 Block, Pocket H, Nirvana Country, Sector 49 - South city 2 Gurugram, Haryana', 
+					'contact_person' => [ 
+						'phone' => '918880000001', 
+					], 
+					'client_order_id' => $order_id,
+					'note' => $address,
+					'taking_amount' => (float)$final_amount,
+				], 
+				
+				[ 
+					//'address' =>  $address,
+					'address' => 'unit no 310 311 good earth city center sector 50 gurgaon',
+					'contact_person' => [ 
+						'phone' => $cust_phoneNumber, 
+					], 
+				], 
+			], 
+		];  
+        $postdata = json_encode($data);
+        $response = Http::withHeaders([
+            'Content-Type' 		=> 'application/json',
+            'X-DV-Auth-Token' 	=> $bzr_conf['bzr_token_test'],
+        ])->post($bzr_conf['base_url_bzr_test']. '/api/business/1.4/create-order', json_decode($postdata, true));
+
+        return $response;
+    }
+
 }
